@@ -12,16 +12,14 @@
 # "github:nixos/nixpkgs/nixpkgs-24.05-darwin" does not contain the fix yet :(
 # See https://github.com/NixOS/nixpkgs/blob/nixpkgs-24.05-darwin/pkgs/build-support/go/module.nix
 {
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-  outputs = { self, nixpkgs }:
-  let
-    systems = [
-      "x86_64-linux"
-      "x86_64-darwin"
-      "aarch64-darwin"
-    ];
-  in {
-    devShells = nixpkgs.lib.attrsets.genAttrs systems (system:
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    flake-util.url = "github:numtide/flake-utils";
+  };
+  outputs =
+    { nixpkgs, flake-util, ... }:
+    flake-util.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         helm = pkgs.kubernetes-helm.overrideAttrs rec {
@@ -34,11 +32,11 @@
           };
           vendorHash = "sha256-rNp2aah6lAMZd07HXF2w0h7wfPc+TuRHl/jQpgqY5Sk=";
         };
-      in {
-        default = pkgs.mkShellNoCC {
-          packages = [helm];
+      in
+      {
+        devShells.default = pkgs.mkShell {
+          packages = [ helm ];
         };
       }
     );
-  };
 }
